@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>HXHX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
   background-color: #1B1C1D;
@@ -9,10 +10,11 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  height: 100vh;
+  min-height: 100vh; /* Use min-height to ensure body fills screen */
   margin: 0;
   font-family: sans-serif;
   padding-top: 50px;
+  box-sizing: border-box; /* Include padding in height/width calculation */
 }
 
 h1 {
@@ -23,6 +25,7 @@ h1 {
 
 .rectangle {
   width: 1000px;
+  max-width: 95%; /* Add max-width for responsiveness */
   height: 500px;
   background-color: transparent;
   border: 3px solid white;
@@ -40,11 +43,28 @@ h1 {
     font-size: 16px;
     word-wrap: break-word;
 }
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  body {
+    padding-top: 20px;
+  }
+
+  h1 {
+    font-size: 36px; /* Reduce font size for smaller screens */
+  }
+
+  .rectangle {
+    width: 95%; /* Make width fluid */
+    height: 65vh; /* Adjust height relative to the viewport */
+    padding: 10px;
+  }
+}
 </style>
 </head>
 <body>
 
-<h1>HXHX</h1>
+<h1>LIVE KEYS</h1>
 <div id="message-box" class="rectangle"></div>
 
 <script>
