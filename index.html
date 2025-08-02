@@ -1,94 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Client</title>
-    <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-        #status { padding: 10px; border-radius: 5px; font-weight: bold; }
-        .connected { background-color: #d4edda; color: #155724; }
-        .disconnected { background-color: #f8d7da; color: #721c24; }
-        #chatbox { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-top: 10px; background-color: #f9f9f9; }
-        #controls { display: flex; margin-top: 10px; }
-        #messageInput { flex-grow: 1; padding: 10px; border: 1px solid #ccc; }
-        button { padding: 10px 15px; border: none; background-color: #007bff; color: white; cursor: pointer; }
-    </style>
+<title>HXHX</title>
+<style>
+body {
+  background-color: #1B1C1D;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  margin: 0;
+  font-family: sans-serif;
+  padding-top: 50px;
+}
+
+h1 {
+  color: #0000FF;
+  font-size: 50px;
+  margin: 0;
+}
+
+.rectangle {
+  width: 1000px;
+  height: 500px;
+  background-color: transparent;
+  border: 3px solid white;
+  border-radius: 25px;
+  margin-top: 20px;
+  padding: 15px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Styles for the messages that will be added */
+.rectangle p {
+    color: white;
+    margin: 5px 0;
+    font-size: 16px;
+    word-wrap: break-word;
+}
+</style>
 </head>
 <body>
-    <h1>Public WebSocket Client</h1>
-    <div id="status" class="disconnected">Disconnected</div>
-    <div id="chatbox"></div>
-    <div id="controls">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendButton">Send</button>
-    </div>
 
-    <script>
-        // !!! IMPORTANT !!!
-        // Replace this with your Hugging Face Space URL.
-        // It MUST start with wss://
-        const HF_SPACE_URL = "NZE77-cutekeys.hf.space";
-        const socketUrl = `wss://${HF_SPACE_URL}`;
+<h1>HXHX</h1>
+<div id="message-box" class="rectangle"></div>
 
-        const statusDiv = document.getElementById('status');
-        const chatbox = document.getElementById('chatbox');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
+<script>
+    const messageBox = document.getElementById('message-box');
+    const ws = new WebSocket(`ws://NZE77-keys.hf.space/ws`);
 
-        let socket;
+    // This variable will keep track of the current <p> element we are typing in.
+    let currentLineElement = null;
 
-        function connect() {
-            socket = new WebSocket(socketUrl);
+    ws.onmessage = function(event) {
+        const char = event.data;
 
-            socket.onopen = function() {
-                statusDiv.textContent = '✅ Connected';
-                statusDiv.className = 'connected';
-                addLog("Connected to the server!");
-            };
-
-            socket.onmessage = function(event) {
-                addLog(`<strong>Server:</strong> ${event.data}`);
-            };
-
-            socket.onclose = function() {
-                statusDiv.textContent = '❌ Disconnected';
-                statusDiv.className = 'disconnected';
-                addLog("Connection closed. Retrying in 3 seconds...");
-                setTimeout(connect, 3000); // Try to reconnect
-            };
-
-            socket.onerror = function(error) {
-                addLog(`<strong>Error:</strong> ${error.message || 'Could not connect.'}`);
-                socket.close();
-            };
+        // If we receive the [ENTER] signal, we'll start a new line.
+        if (char === '[ENTER]') {
+            currentLineElement = null; // Reset to start a new paragraph on the next key
+            return; // We're done, no need to type "[ENTER]"
         }
 
-        function addLog(message) {
-            chatbox.innerHTML += `<p>${message}</p>`;
-            chatbox.scrollTop = chatbox.scrollHeight; // Auto-scroll
+        // If there is no current line, create a new <p> element.
+        if (currentLineElement === null) {
+            currentLineElement = document.createElement('p');
+            messageBox.prepend(currentLineElement); // Add it to the top of the box
         }
 
-        sendButton.onclick = function() {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                const message = messageInput.value;
-                socket.send(message);
-                addLog(`<strong>You:</strong> ${message}`);
-                messageInput.value = '';
-            } else {
-                addLog("Not connected to the server.");
-            }
-        };
+        // Append the received character to the current line.
+        currentLineElement.textContent += char;
+    };
 
-        // Allow sending by pressing Enter
-        messageInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendButton.onclick();
-            }
-        });
+    // Optional: Log connection status to the console for debugging.
+    ws.onopen = function() {
+        console.log("WebSocket connection established.");
+    };
 
-        // Initial connection attempt
-        connect();
-    </script>
+    ws.onclose = function() {
+        console.log("WebSocket connection closed.");
+    };
+
+    ws.onerror = function(error) {
+        console.error("WebSocket Error: ", error);
+    };
+</script>
+
 </body>
 </html>
