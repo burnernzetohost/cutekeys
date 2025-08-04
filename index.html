@@ -1,166 +1,111 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Real-Time Key Tracker</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      /* Custom Styles */
-      body {
-        font-family: "Roboto Mono", monospace;
-        background-color: #1a1a1a;
-        color: #e0e0e0;
-      }
-      .key-container {
-        min-height: 200px;
-        background-color: #2a2a2a;
-        border: 1px solid #444;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        word-wrap: break-word;
-      }
-      .key {
-        display: inline-block;
-        padding: 8px 12px;
-        margin: 4px;
-        background-color: #3a3a3a;
-        border-radius: 6px;
-        border-bottom: 3px solid #222;
-        font-weight: bold;
-        color: #a6e22e; /* Lime green for a terminal look */
-        transition: all 0.1s ease-in-out;
-      }
-      .key.special {
-        background-color: #5a5a5a;
-        color: #f92672; /* Pink for special keys */
-      }
-      .status-dot {
-        height: 12px;
-        width: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        transition: background-color 0.5s ease;
-      }
-      .dot-red {
-        background-color: #ef4444;
-      }
-      .dot-green {
-        background-color: #22c55e;
-      }
-    </style>
-  </head>
-  <body class="flex items-center justify-center min-h-screen">
-    <div class="container mx-auto p-4 md:p-8 max-w-4xl text-center">
-      <header class="mb-6">
-        <h1 class="text-3xl md:text-4xl font-bold text-white">
-          Real-Time Key Tracker
-        </h1>
-        <p class="text-gray-400 mt-2">
-          Live feed of keystrokes from the client machine.
-        </p>
-        <div class="flex items-center justify-center mt-4">
-          <div id="status-dot" class="status-dot dot-red mr-2"></div>
-          <span id="status-text" class="text-gray-400">Disconnected</span>
-        </div>
-      </header>
+<html>
+<head>
+<title>LIVE KEYS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  background-color: #1B1C1D;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh; /* Use min-height to ensure body fills screen */
+  margin: 0;
+  font-family: sans-serif;
+  padding-top: 50px;
+  box-sizing: border-box; /* Include padding in height/width calculation */
+}
 
-      <main>
-        <div
-          id="key-log"
-          class="key-container w-full p-4 rounded-lg overflow-y-auto text-left"
-        >
-          <span class="text-gray-500">Waiting for input...</span>
-        </div>
-        <button
-          id="clear-btn"
-          class="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition-colors"
-        >
-          Clear Log
-        </button>
-      </main>
+h1 {
+  color: #0000FF;
+  font-size: 50px;
+  margin: 0;
+}
 
-      <footer class="mt-8 text-gray-500 text-sm">
-        <p>&copy; 2024 Key Tracker Inc. For educational purposes only.</p>
-      </footer>
-    </div>
+.rectangle {
+  width: 1000px;
+  max-width: 95%; /* Add max-width for responsiveness */
+  height: 500px;
+  background-color: transparent;
+  border: 3px solid white;
+  border-radius: 25px;
+  margin-top: 20px;
+  padding: 15px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
 
-    <script>
-      const WEBSOCKET_URL = "wss://nze77-keylogger12.hf.space/ws/ui";
-      const keyLog = document.getElementById("key-log");
-      const statusDot = document.getElementById("status-dot");
-      const statusText = document.getElementById("status-text");
-      const clearBtn = document.getElementById("clear-btn");
-      let waitingForInput = true;
+/* Styles for the messages that will be added */
+.rectangle p {
+    color: white;
+    margin: 5px 0;
+    font-size: 16px;
+    word-wrap: break-word;
+}
 
-      function connectWebSocket() {
-        const socket = new WebSocket(WEBSOCKET_URL);
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  body {
+    padding-top: 20px;
+  }
 
-        socket.onopen = function (event) {
-          console.log("WebSocket connection established.");
-          statusDot.classList.remove("dot-red");
-          statusDot.classList.add("dot-green");
-          statusText.textContent = "Connected";
-        };
+  h1 {
+    font-size: 36px; /* Reduce font size for smaller screens */
+  }
 
-        socket.onmessage = function (event) {
-          if (waitingForInput) {
-            keyLog.innerHTML = "";
-            waitingForInput = false;
-          }
+  .rectangle {
+    width: 95%; /* Make width fluid */
+    height: 65vh; /* Adjust height relative to the viewport */
+    padding: 10px;
+  }
+}
+</style>
+</head>
+<body>
 
-          const key = event.data;
-          const isSpecialKey = key.startsWith("[") && key.endsWith("]");
-          let lastElement = keyLog.lastElementChild;
+<h1>LIVE KEYS</h1>
+<div id="message-box" class="rectangle"></div>
 
-          // --- LATENCY FIX: Efficient DOM manipulation ---
-          // If the new key is a normal character and the last element is not a special key,
-          // just append the text. This is much faster than creating a new element.
-          if (
-            !isSpecialKey &&
-            lastElement &&
-            !lastElement.classList.contains("special")
-          ) {
-            lastElement.textContent += key;
-          } else {
-            // Otherwise, create a new element for the key.
-            const keyElement = document.createElement("span");
-            keyElement.className = "key";
-            if (isSpecialKey) {
-              keyElement.classList.add("special");
-            }
-            keyElement.textContent = key;
-            keyLog.appendChild(keyElement);
-          }
-          // --------------------------------------------------
+<script>
+    const messageBox = document.getElementById('message-box');
+    const ws = new WebSocket(`wss://NZE77-keys.hf.space/ws`);
 
-          keyLog.scrollTop = keyLog.scrollHeight;
-        };
+    // This variable will keep track of the current <p> element we are typing in.
+    let currentLineElement = null;
 
-        socket.onclose = function (event) {
-          console.log("WebSocket connection closed. Reconnecting...");
-          statusDot.classList.remove("dot-green");
-          statusDot.classList.add("dot-red");
-          statusText.textContent = "Disconnected. Retrying...";
-          setTimeout(connectWebSocket, 3000);
-        };
+    ws.onmessage = function(event) {
+        const char = event.data;
 
-        socket.onerror = function (error) {
-          console.error("WebSocket error:", error);
-          socket.close();
-        };
-      }
+        // If we receive the [ENTER] signal, we'll start a new line.
+        if (char === '[ENTER]') {
+            currentLineElement = null; // Reset to start a new paragraph on the next key
+            return; // We're done, no need to type "[ENTER]"
+        }
 
-      clearBtn.addEventListener("click", () => {
-        keyLog.innerHTML =
-          '<span class="text-gray-500">Waiting for input...</span>';
-        waitingForInput = true;
-      });
+        // If there is no current line, create a new <p> element.
+        if (currentLineElement === null) {
+            currentLineElement = document.createElement('p');
+            messageBox.prepend(currentLineElement); // Add it to the top of the box
+        }
 
-      connectWebSocket();
-    </script>
-  </body>
+        // Append the received character to the current line.
+        currentLineElement.textContent += char;
+    };
+
+    // Optional: Log connection status to the console for debugging.
+    ws.onopen = function() {
+        console.log("WebSocket connection established.");
+    };
+
+    ws.onclose = function() {
+        console.log("WebSocket connection closed.");
+    };
+
+    ws.onerror = function(error) {
+        console.error("WebSocket Error: ", error);
+    };
+</script>
+
+</body>
 </html>
