@@ -10,11 +10,11 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 100vh; /* Use min-height to ensure body fills screen */
+  min-height: 100vh;
   margin: 0;
   font-family: sans-serif;
   padding-top: 50px;
-  box-sizing: border-box; /* Include padding in height/width calculation */
+  box-sizing: border-box;
 }
 
 h1 {
@@ -23,9 +23,19 @@ h1 {
   margin: 0;
 }
 
+/* MODIFIED: Styling for the new status text */
+#connection-status {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 8px;
+  margin-bottom: 10px;
+  color: #FFFFFF; /* White color for the user count */
+  transition: color 0.3s ease;
+}
+
 .rectangle {
   width: 1000px;
-  max-width: 95%; /* Add max-width for responsiveness */
+  max-width: 95%;
   height: 500px;
   background-color: transparent;
   border: 3px solid white;
@@ -36,7 +46,6 @@ h1 {
   box-sizing: border-box;
 }
 
-/* Styles for the messages that will be added */
 .rectangle p {
     color: white;
     margin: 5px 0;
@@ -44,19 +53,19 @@ h1 {
     word-wrap: break-word;
 }
 
-/* Media query for mobile devices */
 @media (max-width: 768px) {
   body {
     padding-top: 20px;
   }
-
   h1 {
-    font-size: 36px; /* Reduce font size for smaller screens */
+    font-size: 36px;
   }
-
+  #connection-status {
+      font-size: 16px;
+  }
   .rectangle {
-    width: 95%; /* Make width fluid */
-    height: 65vh; /* Adjust height relative to the viewport */
+    width: 95%;
+    height: 65vh;
     padding: 10px;
   }
 }
@@ -65,45 +74,61 @@ h1 {
 <body>
 
 <h1>LIVE KEYS</h1>
+<p id="connection-status">Connecting...</p>
 <div id="message-box" class="rectangle"></div>
 
 <script>
     const messageBox = document.getElementById('message-box');
-    const ws = new WebSocket(`wss://NZE77-keys.hf.space/ws`);
+    const statusElement = document.getElementById('connection-status'); // Get the status element
+    const ws = new WebSocket(`wss://NZE77-keys.hf.space/ws`); // Replace with your actual WebSocket URL
 
-    // This variable will keep track of the current <p> element we are typing in.
     let currentLineElement = null;
 
+    // MODIFIED: The onmessage handler is now more powerful
     ws.onmessage = function(event) {
-        const char = event.data;
+        // First, parse the incoming JSON data from the server
+        const message = JSON.parse(event.data);
 
-        // If we receive the [ENTER] signal, we'll start a new line.
-        if (char === '[ENTER]') {
-            currentLineElement = null; // Reset to start a new paragraph on the next key
-            return; // We're done, no need to type "[ENTER]"
+        // Check the type of the message
+        if (message.type === 'status_update') {
+            // If it's a status update, change the status text
+            const userCount = message.count;
+            statusElement.textContent = `${userCount} User(s) Online`;
+
+        } else if (message.type === 'key_press') {
+            // If it's a key press, perform the original typing logic
+            const char = message.data;
+
+            if (char === '[ENTER]') {
+                currentLineElement = null;
+                return;
+            }
+
+            if (currentLineElement === null) {
+                currentLineElement = document.createElement('p');
+                messageBox.prepend(currentLineElement);
+            }
+
+            currentLineElement.textContent += char;
         }
-
-        // If there is no current line, create a new <p> element.
-        if (currentLineElement === null) {
-            currentLineElement = document.createElement('p');
-            messageBox.prepend(currentLineElement); // Add it to the top of the box
-        }
-
-        // Append the received character to the current line.
-        currentLineElement.textContent += char;
     };
 
-    // Optional: Log connection status to the console for debugging.
     ws.onopen = function() {
         console.log("WebSocket connection established.");
+        // The status text will be updated automatically when the first 'status_update' message arrives
     };
 
     ws.onclose = function() {
         console.log("WebSocket connection closed.");
+        // Update the UI to show a disconnected state for this specific user
+        statusElement.textContent = 'You are disconnected. Refresh to reconnect.';
+        statusElement.style.color = '#E74C3C'; // Red
     };
 
     ws.onerror = function(error) {
         console.error("WebSocket Error: ", error);
+        statusElement.textContent = 'Connection Error.';
+        statusElement.style.color = '#E74C3C'; // Red
     };
 </script>
 
